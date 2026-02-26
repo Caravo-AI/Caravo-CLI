@@ -24,6 +24,7 @@ Commands:
   request --title <t> --desc <d>
                              Submit a tool request
   request-upvote <req-id>    Upvote a tool request
+  login                      Connect your Caravo account via browser (saves API key)
   wallet                     Show wallet + balance info
   fetch [METHOD] <url>       Raw x402 HTTP request
 
@@ -191,7 +192,7 @@ function parseArgs(argv: string[]): ParsedArgs {
   return args;
 }
 
-const VERSION = "0.2.1";
+const VERSION = "0.2.2";
 
 async function main() {
   const args = parseArgs(process.argv.slice(2));
@@ -297,6 +298,11 @@ async function main() {
     case "request-upvote": {
       const { runUpvote: runReqUpvote } = await import("./commands/requests.js");
       await runReqUpvote(args.positional[0], args.exec, auth, args.compact);
+      break;
+    }
+    case "login": {
+      const { runLogin } = await import("./commands/login.js");
+      await runLogin(auth.baseUrl);
       break;
     }
     case "wallet": {
