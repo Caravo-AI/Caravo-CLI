@@ -187,13 +187,13 @@ function parseArgs(argv: string[]): ParsedArgs {
   return args;
 }
 
-const VERSION = "2.0.0";
+const VERSION = "0.1.1";
 
 async function main() {
   const args = parseArgs(process.argv.slice(2));
 
   if (args.version) {
-    process.stdout.write(`falm ${VERSION}\n`);
+    process.stdout.write(`caravo ${VERSION}\n`);
     process.exit(0);
   }
 
@@ -211,7 +211,7 @@ async function main() {
   switch (args.subcommand) {
     case "search": {
       const { runSearch } = await import("./commands/search.js");
-      // Join all positional args so "falm search image generation" works like "image generation"
+      // Join all positional args so "caravo search image generation" works like "image generation"
       const query = args.positional.length > 0 ? args.positional.join(" ") : undefined;
       await runSearch(query, {
         tag: args.tag,

@@ -1,6 +1,6 @@
 {
   "name": "@caravo/cli",
-  "version": "2.0.0",
+  "version": "0.1.1",
   "description": "Caravo CLI — search, execute, and review tools with API key or x402 USDC payments",
   "type": "module",
   "bin": {
