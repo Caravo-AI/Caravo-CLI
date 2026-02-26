@@ -187,7 +187,7 @@ function parseArgs(argv: string[]): ParsedArgs {
   return args;
 }
 
-const VERSION = "0.1.1";
+const VERSION = "0.2.0";
 
 async function main() {
   const args = parseArgs(process.argv.slice(2));
