@@ -1,7 +1,11 @@
 #!/usr/bin/env node
 
+import { createRequire } from "module";
 import { resolveAuth } from "./lib/auth.js";
 import { log } from "./lib/output.js";
+
+const require = createRequire(import.meta.url);
+const { version: VERSION } = require("../package.json") as { version: string };
 
 const HELP = `caravo — Caravo CLI
 
@@ -192,8 +196,6 @@ function parseArgs(argv: string[]): ParsedArgs {
 
   return args;
 }
-
-const VERSION = "0.2.2";
 
 async function main() {
   const args = parseArgs(process.argv.slice(2));
