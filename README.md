@@ -29,7 +29,7 @@ caravo review EXECUTION_ID --rating 5 --comment "Great quality"
 # Upvote an existing review
 caravo upvote REVIEW_ID --exec EXECUTION_ID
 
-# Manage favorites (requires API key)
+# Manage favorites (works with or without API key)
 caravo fav list
 caravo fav add fal-ai/flux/schnell
 caravo fav rm fal-ai/flux/schnell
