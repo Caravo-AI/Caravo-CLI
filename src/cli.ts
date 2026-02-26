@@ -179,6 +179,10 @@ function parseArgs(argv: string[]): ParsedArgs {
       args.agentId = argv[++i];
     } else if (!arg.startsWith("-")) {
       args.positional.push(arg);
+    } else {
+      // Unknown flag
+      process.stderr.write(`[caravo] unknown option: ${arg}\n`);
+      process.exit(1);
     }
 
     i++;
@@ -187,7 +191,7 @@ function parseArgs(argv: string[]): ParsedArgs {
   return args;
 }
 
-const VERSION = "0.2.0";
+const VERSION = "0.2.1";
 
 async function main() {
   const args = parseArgs(process.argv.slice(2));
@@ -237,8 +241,13 @@ async function main() {
       break;
     }
     case "exec": {
-      const { run } = await import("./commands/exec.js");
-      await run(args.positional[0], args.data, auth, args.compact);
+      if (args.dryRun) {
+        const { runDryRun } = await import("./commands/exec.js");
+        await runDryRun(args.positional[0], args.data, auth, args.compact);
+      } else {
+        const { run } = await import("./commands/exec.js");
+        await run(args.positional[0], args.data, auth, args.compact);
+      }
       break;
     }
     case "dry-run": {

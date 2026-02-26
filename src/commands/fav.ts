@@ -35,7 +35,17 @@ function localList(compact: boolean): void {
   outputJson(data, compact);
 }
 
-function localAdd(toolId: string): void {
+async function localAdd(toolId: string, baseUrl: string): Promise<void> {
+  // Verify tool exists on server before adding
+  try {
+    const r = await fetch(`${baseUrl}/api/tools/${toolId}`);
+    if (r.status === 404) {
+      log(`Tool not found: ${toolId}`);
+      process.exit(1);
+    }
+  } catch {
+    // Network error — allow offline add
+  }
   const favs = readLocal();
   if (favs.favorites.includes(toolId)) {
     log(`${toolId} is already in favorites`);
@@ -107,7 +117,7 @@ export async function run(
 
   // No API key → local mode
   log("[local mode — set CARAVO_API_KEY to sync with server]");
-  return runLocal(sub, toolId, compact);
+  return runLocal(sub, toolId, compact, auth.baseUrl);
 }
 
 async function runServer(
@@ -144,11 +154,12 @@ async function runServer(
   }
 }
 
-function runLocal(
+async function runLocal(
   sub: string | undefined,
   toolId: string | undefined,
-  compact: boolean
-): void {
+  compact: boolean,
+  baseUrl: string
+): Promise<void> {
   switch (sub) {
     case "list":
       localList(compact);
@@ -157,7 +168,7 @@ function runLocal(
       if (!toolId) { log("Usage: caravo fav add <tool-id>"); process.exit(1); }
       const err = validateToolId(toolId);
       if (err) { log(err); process.exit(1); }
-      localAdd(toolId);
+      await localAdd(toolId, baseUrl);
       break;
     }
     case "rm": {
