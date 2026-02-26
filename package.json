@@ -1,6 +1,6 @@
 {
   "name": "@caravo/cli",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "description": "Caravo CLI — search, execute, and review tools with API key or x402 USDC payments",
   "type": "module",
   "bin": {
@@ -17,7 +17,16 @@
     "typescript": "^5.8.2",
     "@types/node": "^22"
   },
-  "keywords": ["caravo", "marketplace", "cli", "x402", "usdc", "base", "agent", "mcp"],
+  "keywords": [
+    "caravo",
+    "marketplace",
+    "cli",
+    "x402",
+    "usdc",
+    "base",
+    "agent",
+    "mcp"
+  ],
   "repository": {
     "type": "git",
     "url": "https://github.com/Caravo-AI/Caravo-CLI"

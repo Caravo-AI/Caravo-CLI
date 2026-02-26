@@ -25,6 +25,7 @@ Commands:
                              Submit a tool request
   request-upvote <req-id>    Upvote a tool request
   login                      Connect your Caravo account via browser (saves API key)
+  logout                     Disconnect account and switch to x402 wallet payments
   wallet                     Show wallet + balance info
   fetch [METHOD] <url>       Raw x402 HTTP request
 
@@ -303,6 +304,11 @@ async function main() {
     case "login": {
       const { runLogin } = await import("./commands/login.js");
       await runLogin(auth.baseUrl);
+      break;
+    }
+    case "logout": {
+      const { runLogout } = await import("./commands/logout.js");
+      runLogout();
       break;
     }
     case "wallet": {
