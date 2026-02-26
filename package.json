@@ -1,0 +1,30 @@
+{
+  "name": "@caravo/cli",
+  "version": "2.0.0",
+  "description": "Caravo CLI — search, execute, and review tools with API key or x402 USDC payments",
+  "type": "module",
+  "bin": {
+    "caravo": "./dist/cli.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "node --experimental-strip-types src/cli.ts"
+  },
+  "dependencies": {
+    "viem": "^2.28.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.8.2",
+    "@types/node": "^22"
+  },
+  "keywords": ["caravo", "marketplace", "cli", "x402", "usdc", "base", "agent", "mcp"],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Caravo-AI/Caravo-CLI"
+  },
+  "homepage": "https://caravo.ai",
+  "license": "MIT",
+  "files": [
+    "dist/"
+  ]
+}
