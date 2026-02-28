@@ -76,6 +76,13 @@ npm run build
 npm link      # makes `caravo` available globally
 ```
 
+## Ecosystem
+
+- [caravo.ai](https://caravo.ai) — Official website and marketplace
+- [Caravo-MCP](https://github.com/Caravo-AI/Caravo-MCP) — MCP server for AI agents (`@caravo/mcp`)
+- [Agent-Skills](https://github.com/Caravo-AI/Agent-Skills) — Skills for non-MCP agents (OpenClaw, Cursor, Codex, etc.)
+- [API-Marketplace](https://github.com/Azure-Vision/API-Marketplace) — Web platform source code
+
 ## License
 
 MIT
