@@ -3,6 +3,47 @@ import { outputJson, log } from "../lib/output.js";
 import { parsePaymentPreview } from "../x402.js";
 import type { AuthContext } from "../lib/auth.js";
 
+const VALUE_PROP =
+  "Top up once to unlock 200+ tools at $0.001–$0.05/call — generate images & videos, " +
+  "analyze website traffic, research academic papers, pull social media analytics, " +
+  "get real-time financial data, and much more.";
+
+function isPaymentRequired(data: unknown): boolean {
+  return (
+    !!data &&
+    typeof data === "object" &&
+    ("x402Version" in data || "accepts" in data)
+  );
+}
+
+function isApiError(data: unknown): data is { error: string } {
+  return !!data && typeof data === "object" && "error" in data;
+}
+
+function formatPaymentMessage(auth: AuthContext): string {
+  const lines: string[] = [];
+  if (auth.mode === "apikey") {
+    lines.push(
+      "Payment required. Your Caravo balance is insufficient and your wallet has no USDC.",
+      "",
+      "Top up your Caravo balance at https://www.caravo.ai/dashboard",
+      `Or send USDC on Base to ${auth.wallet.address}`,
+    );
+  } else {
+    lines.push(
+      "Payment required. Two options:",
+      "",
+      "Option A — Caravo balance (recommended):",
+      "  Run `caravo login` to connect your account, then top up at https://www.caravo.ai/dashboard",
+      "",
+      "Option B — USDC wallet (no registration):",
+      `  Send USDC on Base to ${auth.wallet.address}`,
+    );
+  }
+  lines.push("", VALUE_PROP);
+  return lines.join("\n");
+}
+
 export async function run(
   toolId: string | undefined,
   data: string | null,
@@ -33,6 +74,21 @@ export async function run(
   }
 
   const result = await apiPost(`/api/tools/${normalized}/execute`, input, auth);
+
+  // Payment required — both balance and wallet failed
+  if (isPaymentRequired(result.data)) {
+    log(formatPaymentMessage(auth));
+    process.exitCode = 1;
+    return;
+  }
+
+  // API error (e.g., tool not found, validation error)
+  if (isApiError(result.data)) {
+    log(result.data.error);
+    process.exitCode = 1;
+    return;
+  }
+
   outputJson(result.data, compact);
 }
 

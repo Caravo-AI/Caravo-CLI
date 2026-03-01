@@ -63,6 +63,20 @@ export async function apiPost(
   }
 
   const r = await fetch(url, opts);
+  // Fallback to x402 if balance auth fails (401/403) or balance insufficient (402)
+  if (r.status === 401 || r.status === 403 || r.status === 402) {
+    log(`API key request failed (${r.status}), falling back to x402`);
+    const x402Opts: RequestInit = {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    };
+    const { response, paid, cost } = await fetchWithX402(url, x402Opts, auth.wallet);
+    if (paid) log(`paid $${cost} via x402`);
+    const data = await response.json();
+    checkResponseError(data, response.status);
+    return { data, paid, cost };
+  }
   const data = await r.json();
   checkResponseError(data, r.status);
   return { data, paid: false, cost: null };
