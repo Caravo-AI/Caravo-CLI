@@ -4,7 +4,7 @@ import { join } from "path";
 import { loadOrCreateWallet } from "../wallet.js";
 import type { Wallet } from "../wallet.js";
 
-const DEFAULT_BASE_URL = "https://caravo.ai";
+const DEFAULT_BASE_URL = "https://www.caravo.ai";
 const CONFIG_FILE = join(homedir(), ".caravo", "config.json");
 
 function readConfigApiKey(): string | undefined {
