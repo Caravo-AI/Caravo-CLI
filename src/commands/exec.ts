@@ -84,7 +84,8 @@ export async function run(
 
   // API error (e.g., tool not found, validation error)
   if (isApiError(result.data)) {
-    log(result.data.error);
+    const details = (result.data as Record<string, unknown>).details;
+    log(details ? `${result.data.error}: ${details}` : result.data.error);
     process.exitCode = 1;
     return;
   }
