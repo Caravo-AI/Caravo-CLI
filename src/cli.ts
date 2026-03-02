@@ -1,5 +1,13 @@
 #!/usr/bin/env node
 
+if (typeof globalThis.fetch === "undefined") {
+  process.stderr.write(
+    `[caravo] error: fetch is not available. Node.js >= 18 is required (you have ${process.version}).\n` +
+    `  If you have multiple Node versions, ensure "npx" resolves to Node 18+.\n`
+  );
+  process.exit(1);
+}
+
 import { createRequire } from "module";
 import { resolveAuth } from "./lib/auth.js";
 import { log } from "./lib/output.js";

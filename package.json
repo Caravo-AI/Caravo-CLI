@@ -1,6 +1,6 @@
 {
   "name": "@caravo/cli",
-  "version": "0.2.7",
+  "version": "0.2.8",
   "description": "Caravo CLI — search, execute, and review tools with API key or x402 USDC payments",
   "type": "module",
   "bin": {
@@ -32,6 +32,9 @@
     "url": "https://github.com/Caravo-AI/Caravo-CLI"
   },
   "homepage": "https://caravo.ai",
+  "engines": {
+    "node": ">=18"
+  },
   "license": "MIT",
   "files": [
     "dist/"
