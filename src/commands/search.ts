@@ -4,7 +4,7 @@ import type { AuthContext } from "../lib/auth.js";
 
 export async function runSearch(
   query: string | undefined,
-  opts: { tag?: string; provider?: string; page?: string; perPage?: string },
+  opts: { tag?: string; provider?: string; pricingType?: string; page?: string; perPage?: string },
   auth: AuthContext,
   compact: boolean
 ): Promise<void> {
@@ -12,6 +12,7 @@ export async function runSearch(
   if (query) params.set("query", query);
   if (opts.tag) params.set("tag", opts.tag);
   if (opts.provider) params.set("provider", opts.provider);
+  if (opts.pricingType) params.set("pricing_type", opts.pricingType);
 
   if (opts.page) {
     const p = parsePositiveInt(opts.page, "page");

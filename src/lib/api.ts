@@ -56,10 +56,10 @@ export async function apiPost(
 
   if (auth.mode === "x402") {
     const { response, paid, cost } = await fetchWithX402(url, opts, auth.wallet);
-    if (paid) log(`paid $${cost} via x402`);
     const data = await response.json();
-    checkResponseError(data, response.status);
-    return { data, paid, cost };
+    const isError = checkResponseError(data, response.status);
+    if (paid && !isError) log(`paid $${cost} via x402`);
+    return { data, paid: paid && !isError, cost: paid && !isError ? cost : null };
   }
 
   const r = await fetch(url, opts);
@@ -72,10 +72,10 @@ export async function apiPost(
       body: JSON.stringify(body),
     };
     const { response, paid, cost } = await fetchWithX402(url, x402Opts, auth.wallet);
-    if (paid) log(`paid $${cost} via x402`);
     const data = await response.json();
-    checkResponseError(data, response.status);
-    return { data, paid, cost };
+    const isError = checkResponseError(data, response.status);
+    if (paid && !isError) log(`paid $${cost} via x402`);
+    return { data, paid: paid && !isError, cost: paid && !isError ? cost : null };
   }
   const data = await r.json();
   checkResponseError(data, r.status);

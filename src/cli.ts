@@ -44,6 +44,7 @@ Commands:
 Options:
   --tag <name|slug>   Filter by tag name or slug (search)
   --provider <name|slug> Filter by provider name or slug (search)
+  --pricing-type <free|paid> Filter by pricing (search)
   --page <n>          Page number
   --per-page <n>      Results per page
   --status <s>        Filter requests by status (open|fulfilled|closed)
@@ -90,6 +91,7 @@ interface ParsedArgs {
   useCase: string | undefined;
   status: string | undefined;
   agentId: string | undefined;
+  pricingType: string | undefined;
 }
 
 function parseArgs(argv: string[]): ParsedArgs {
@@ -118,6 +120,7 @@ function parseArgs(argv: string[]): ParsedArgs {
     useCase: undefined,
     status: undefined,
     agentId: undefined,
+    pricingType: undefined,
   };
 
   let i = 0;
@@ -191,6 +194,8 @@ function parseArgs(argv: string[]): ParsedArgs {
       args.status = argv[++i];
     } else if (arg === "--agent-id") {
       args.agentId = argv[++i];
+    } else if (arg === "--pricing-type") {
+      args.pricingType = argv[++i];
     } else if (!arg.startsWith("-")) {
       args.positional.push(arg);
     } else {
@@ -232,6 +237,7 @@ async function main() {
       await runSearch(query, {
         tag: args.tag,
         provider: args.provider,
+        pricingType: args.pricingType,
         page: args.page,
         perPage: args.perPage,
       }, auth, args.compact);
