@@ -11,9 +11,16 @@ if (typeof globalThis.fetch === "undefined") {
 import { createRequire } from "module";
 import { resolveAuth } from "./lib/auth.js";
 import { log } from "./lib/output.js";
+import { checkForUpdate, type UpdateInfo } from "./lib/version-check.js";
 
 const require = createRequire(import.meta.url);
 const { version: VERSION } = require("../package.json") as { version: string };
+
+// Background version check (non-blocking, fire-and-forget)
+let pendingUpdate: UpdateInfo | null = null;
+const updateCheck = checkForUpdate("@caravo/cli", VERSION).then((info) => {
+  pendingUpdate = info;
+});
 
 const HELP = `caravo — Caravo CLI
 
@@ -38,6 +45,7 @@ Commands:
   request-upvote <req-id>    Upvote a tool request
   login                      Connect your Caravo account via browser (saves API key)
   logout                     Disconnect account and switch to x402 wallet payments
+  update                     Update CLI to the latest version
   wallet                     Show wallet + balance info
   fetch [METHOD] <url>       Raw x402 HTTP request
 
@@ -327,6 +335,11 @@ async function main() {
       runLogout();
       break;
     }
+    case "update": {
+      const { runUpdate } = await import("./commands/update.js");
+      await runUpdate(VERSION);
+      break;
+    }
     case "wallet": {
       const { run } = await import("./commands/wallet-cmd.js");
       await run(auth, args.compact);
@@ -347,6 +360,15 @@ async function main() {
       log(`Unknown command: ${args.subcommand}`);
       process.stdout.write(HELP);
       process.exit(1);
+  }
+
+  // Wait for background version check and show notice if update available
+  await updateCheck;
+  if (pendingUpdate && args.subcommand !== "update") {
+    process.stderr.write(
+      `\n[caravo] update available: ${pendingUpdate.current} → ${pendingUpdate.latest}\n` +
+      `  Run \`caravo update\` or \`npm i -g @caravo/cli@latest\` to update.\n`
+    );
   }
 }
 
