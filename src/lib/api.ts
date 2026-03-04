@@ -47,13 +47,7 @@ export async function apiGet(
   auth: AuthContext
 ): Promise<unknown> {
   const r = await fetch(`${auth.baseUrl}${path}`, { headers: auth.headers() });
-  if (!r.ok) {
-    const text = await r.text().catch(() => "");
-    throw new Error(`API request failed (${r.status}): ${text.slice(0, 200)}`);
-  }
-  const data = await r.json().catch(() => {
-    throw new Error(`API returned non-JSON response (${r.status})`);
-  });
+  const data = await safeParseJson(r);
   checkResponseError(data, r.status);
   return data;
 }
@@ -108,13 +102,7 @@ export async function apiDelete(
     headers: auth.headers(),
     body: JSON.stringify(body),
   });
-  if (!r.ok) {
-    const text = await r.text().catch(() => "");
-    throw new Error(`API request failed (${r.status}): ${text.slice(0, 200)}`);
-  }
-  const data = await r.json().catch(() => {
-    throw new Error(`API returned non-JSON response (${r.status})`);
-  });
+  const data = await safeParseJson(r);
   checkResponseError(data, r.status);
   return data;
 }
