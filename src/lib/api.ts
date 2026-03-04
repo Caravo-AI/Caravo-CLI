@@ -2,6 +2,16 @@ import { fetchWithX402 } from "../x402.js";
 import { log } from "./output.js";
 import type { AuthContext } from "./auth.js";
 
+/** Safely parse JSON from a response, returning an error object on failure. */
+async function safeParseJson(r: Response): Promise<unknown> {
+  try {
+    return await r.json();
+  } catch {
+    const text = await r.text().catch(() => "");
+    return { error: `Non-JSON response (${r.status}): ${text.slice(0, 200)}` };
+  }
+}
+
 /** Normalize a tool ID: trim whitespace, strip trailing slashes, lowercase. */
 export function normalizeToolId(toolId: string): string {
   return toolId.trim().replace(/\/+$/, "").toLowerCase();
@@ -37,7 +47,13 @@ export async function apiGet(
   auth: AuthContext
 ): Promise<unknown> {
   const r = await fetch(`${auth.baseUrl}${path}`, { headers: auth.headers() });
-  const data = await r.json();
+  if (!r.ok) {
+    const text = await r.text().catch(() => "");
+    throw new Error(`API request failed (${r.status}): ${text.slice(0, 200)}`);
+  }
+  const data = await r.json().catch(() => {
+    throw new Error(`API returned non-JSON response (${r.status})`);
+  });
   checkResponseError(data, r.status);
   return data;
 }
@@ -56,7 +72,7 @@ export async function apiPost(
 
   if (auth.mode === "x402") {
     const { response, paid, cost } = await fetchWithX402(url, opts, auth.wallet);
-    const data = await response.json();
+    const data = await safeParseJson(response);
     const isError = checkResponseError(data, response.status);
     if (paid && !isError) log(`paid $${cost} via x402`);
     return { data, paid: paid && !isError, cost: paid && !isError ? cost : null };
@@ -72,12 +88,12 @@ export async function apiPost(
       body: JSON.stringify(body),
     };
     const { response, paid, cost } = await fetchWithX402(url, x402Opts, auth.wallet);
-    const data = await response.json();
+    const data = await safeParseJson(response);
     const isError = checkResponseError(data, response.status);
     if (paid && !isError) log(`paid $${cost} via x402`);
     return { data, paid: paid && !isError, cost: paid && !isError ? cost : null };
   }
-  const data = await r.json();
+  const data = await safeParseJson(r);
   checkResponseError(data, r.status);
   return { data, paid: false, cost: null };
 }
@@ -92,7 +108,13 @@ export async function apiDelete(
     headers: auth.headers(),
     body: JSON.stringify(body),
   });
-  const data = await r.json();
+  if (!r.ok) {
+    const text = await r.text().catch(() => "");
+    throw new Error(`API request failed (${r.status}): ${text.slice(0, 200)}`);
+  }
+  const data = await r.json().catch(() => {
+    throw new Error(`API returned non-JSON response (${r.status})`);
+  });
   checkResponseError(data, r.status);
   return data;
 }
