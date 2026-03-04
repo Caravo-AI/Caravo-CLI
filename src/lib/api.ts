@@ -78,7 +78,7 @@ export async function apiPost(
     log(`API key request failed (${r.status}), falling back to x402`);
     const x402Opts: RequestInit = {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: auth.headers(), // Keep Authorization for user attribution on x402 fallback
       body: JSON.stringify(body),
     };
     const { response, paid, cost } = await fetchWithX402(url, x402Opts, auth.wallet);
