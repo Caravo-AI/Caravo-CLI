@@ -11,7 +11,7 @@ if (typeof globalThis.fetch === "undefined") {
 import { createRequire } from "module";
 import { resolveAuth } from "./lib/auth.js";
 import { log, setUpdateNotice } from "./lib/output.js";
-import { checkForUpdate, type UpdateInfo } from "./lib/version-check.js";
+import { checkForUpdate, isNpxRun, type UpdateInfo } from "./lib/version-check.js";
 
 const require = createRequire(import.meta.url);
 const { version: VERSION } = require("../package.json") as { version: string };
@@ -21,8 +21,11 @@ let pendingUpdate: UpdateInfo | null = null;
 const updateCheck = checkForUpdate("@caravo/cli", VERSION).then((info) => {
   pendingUpdate = info;
   if (info) {
+    const action = isNpxRun()
+      ? "Next run will automatically use the latest version."
+      : "Run `caravo update` to update.";
     setUpdateNotice(
-      `Caravo CLI update available: ${info.current} → ${info.latest}. Run \`caravo update\` to update.`
+      `Caravo CLI update available: ${info.current} → ${info.latest}. ${action}`
     );
   }
 });
@@ -370,9 +373,12 @@ async function main() {
   // Wait for background version check and show notice if update available
   await updateCheck;
   if (pendingUpdate && args.subcommand !== "update") {
+    const action = isNpxRun()
+      ? "Next run will automatically use the latest version."
+      : "Run `caravo update` to update.";
     process.stderr.write(
       `\n[caravo] update available: ${pendingUpdate.current} → ${pendingUpdate.latest}\n` +
-      `  Run \`caravo update\` to update.\n`
+      `  ${action}\n`
     );
   }
 }
