@@ -20,12 +20,9 @@ const { version: VERSION } = require("../package.json") as { version: string };
 let pendingUpdate: UpdateInfo | null = null;
 const updateCheck = checkForUpdate("@caravo/cli", VERSION).then((info) => {
   pendingUpdate = info;
-  if (info) {
-    const action = isNpxRun()
-      ? "Next run will automatically use the latest version."
-      : "Run `caravo update` to update.";
+  if (info && !isNpxRun()) {
     setUpdateNotice(
-      `Caravo CLI update available: ${info.current} → ${info.latest}. ${action}`
+      `Caravo CLI update available: ${info.current} → ${info.latest}. Run \`caravo update\` to update.`
     );
   }
 });
@@ -372,13 +369,10 @@ async function main() {
 
   // Wait for background version check and show notice if update available
   await updateCheck;
-  if (pendingUpdate && args.subcommand !== "update") {
-    const action = isNpxRun()
-      ? "Next run will automatically use the latest version."
-      : "Run `caravo update` to update.";
+  if (pendingUpdate && !isNpxRun() && args.subcommand !== "update") {
     process.stderr.write(
       `\n[caravo] update available: ${pendingUpdate.current} → ${pendingUpdate.latest}\n` +
-      `  ${action}\n`
+      `  Run \`caravo update\` to update.\n`
     );
   }
 }
