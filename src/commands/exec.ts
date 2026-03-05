@@ -3,26 +3,53 @@ import { outputJson, log } from "../lib/output.js";
 import { parsePaymentPreview } from "../x402.js";
 import type { AuthContext } from "../lib/auth.js";
 import { readFileSync, existsSync } from "fs";
+import { homedir } from "os";
+import { join } from "path";
+
+const MIME_MAP: Record<string, string> = {
+  ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".png": "image/png",
+  ".gif": "image/gif", ".webp": "image/webp", ".bmp": "image/bmp",
+  ".svg": "image/svg+xml", ".tif": "image/tiff", ".tiff": "image/tiff",
+  ".mp4": "video/mp4", ".webm": "video/webm", ".mov": "video/quicktime",
+  ".mp3": "audio/mpeg", ".wav": "audio/wav", ".ogg": "audio/ogg",
+  ".pdf": "application/pdf",
+};
+
+const FILE_EXTENSIONS = new Set(Object.keys(MIME_MAP));
 
 function resolveLocalFiles(input: Record<string, unknown>): Record<string, unknown> {
   const result = { ...input };
   for (const [key, value] of Object.entries(result)) {
     if (typeof value !== "string") continue;
+    if (/^https?:\/\//i.test(value) || /^data:/i.test(value)) continue;
     const filePath = toLocalPath(value);
     if (!filePath) continue;
     if (!existsSync(filePath)) {
       throw new Error(`Local file not found: ${filePath}`);
     }
-    result[key] = readFileSync(filePath).toString("base64");
+    const data = readFileSync(filePath);
+    const ext = filePath.substring(filePath.lastIndexOf(".")).toLowerCase();
+    const mime = MIME_MAP[ext] || "application/octet-stream";
+    result[key] = `data:${mime};base64,${data.toString("base64")}`;
+    log(`file → data URI: ${filePath} (${mime}, ${data.length} bytes)`);
   }
   return result;
 }
 
 function toLocalPath(value: string): string | null {
-  if (value.startsWith("file:///")) return value.slice(7);
-  if (value.startsWith("file://")) return value.slice(7);
-  if (/^\//.test(value) && /\.(png|jpe?g|gif|webp|bmp|svg|tiff?)$/i.test(value)) return value;
-  return null;
+  let path: string | null = null;
+  if (value.startsWith("file://")) {
+    path = value.slice(7);
+  } else if (value.startsWith("~/")) {
+    path = join(homedir(), value.slice(2));
+  } else if (value.startsWith("./") || value.startsWith("../")) {
+    path = join(process.cwd(), value);
+  } else if (/^\//.test(value)) {
+    path = value;
+  }
+  if (!path) return null;
+  const ext = path.substring(path.lastIndexOf(".")).toLowerCase();
+  return FILE_EXTENSIONS.has(ext) ? path : null;
 }
 
 const VALUE_PROP =
