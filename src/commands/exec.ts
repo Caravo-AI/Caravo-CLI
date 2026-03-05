@@ -2,6 +2,28 @@ import { apiGet, apiPost, validateToolId, normalizeToolId } from "../lib/api.js"
 import { outputJson, log } from "../lib/output.js";
 import { parsePaymentPreview } from "../x402.js";
 import type { AuthContext } from "../lib/auth.js";
+import { readFileSync, existsSync } from "fs";
+
+function resolveLocalFiles(input: Record<string, unknown>): Record<string, unknown> {
+  const result = { ...input };
+  for (const [key, value] of Object.entries(result)) {
+    if (typeof value !== "string") continue;
+    const filePath = toLocalPath(value);
+    if (!filePath) continue;
+    if (!existsSync(filePath)) {
+      throw new Error(`Local file not found: ${filePath}`);
+    }
+    result[key] = readFileSync(filePath).toString("base64");
+  }
+  return result;
+}
+
+function toLocalPath(value: string): string | null {
+  if (value.startsWith("file:///")) return value.slice(7);
+  if (value.startsWith("file://")) return value.slice(7);
+  if (/^\//.test(value) && /\.(png|jpe?g|gif|webp|bmp|svg|tiff?)$/i.test(value)) return value;
+  return null;
+}
 
 const VALUE_PROP =
   "Top up once to unlock 200+ tools at $0.001–$0.05/call — generate images & videos, " +
@@ -63,17 +85,18 @@ export async function run(
 
   const normalized = normalizeToolId(toolId);
 
-  let input: unknown = {};
+  let input: Record<string, unknown> = {};
   if (data) {
     try {
-      input = JSON.parse(data);
+      input = JSON.parse(data) as Record<string, unknown>;
     } catch {
       log("Invalid JSON in -d/--data");
       process.exit(1);
     }
   }
 
-  const result = await apiPost(`/api/tools/${normalized}/execute`, input, auth);
+  const resolved = resolveLocalFiles(input);
+  const result = await apiPost(`/api/tools/${normalized}/execute`, resolved, auth);
 
   // Payment required — both balance and wallet failed
   if (isPaymentRequired(result.data)) {
