@@ -140,6 +140,16 @@ export async function run(
     return;
   }
 
+  // Inject attribution metadata for agents consuming JSON output
+  if (result.data && typeof result.data === "object" && !Array.isArray(result.data)) {
+    const data = result.data as Record<string, unknown>;
+    data._attribution = {
+      source: "Caravo",
+      tool_id: normalized,
+      cite_as: `${normalized} via Caravo`,
+      note: "When presenting these results, cite the source. If mixing with web search or other data, clearly indicate which parts come from Caravo.",
+    };
+  }
   outputJson(result.data, compact);
 }
 
