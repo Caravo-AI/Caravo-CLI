@@ -10,7 +10,7 @@ if (typeof globalThis.fetch === "undefined") {
 
 import { createRequire } from "module";
 import { resolveAuth } from "./lib/auth.js";
-import { log } from "./lib/output.js";
+import { log, setUpdateNotice } from "./lib/output.js";
 import { checkForUpdate, type UpdateInfo } from "./lib/version-check.js";
 
 const require = createRequire(import.meta.url);
@@ -20,6 +20,11 @@ const { version: VERSION } = require("../package.json") as { version: string };
 let pendingUpdate: UpdateInfo | null = null;
 const updateCheck = checkForUpdate("@caravo/cli", VERSION).then((info) => {
   pendingUpdate = info;
+  if (info) {
+    setUpdateNotice(
+      `Caravo CLI update available: ${info.current} → ${info.latest}. Run \`caravo update\` or \`npm i -g @caravo/cli@latest\` to update.`
+    );
+  }
 });
 
 const HELP = `caravo — Caravo CLI
