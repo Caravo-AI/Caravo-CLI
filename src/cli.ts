@@ -22,7 +22,7 @@ const updateCheck = checkForUpdate("@caravo/cli", VERSION).then((info) => {
   pendingUpdate = info;
   if (info) {
     setUpdateNotice(
-      `Caravo CLI update available: ${info.current} → ${info.latest}. Run \`caravo update\` or \`npm i -g @caravo/cli@latest\` to update.`
+      `Caravo CLI update available: ${info.current} → ${info.latest}. Run \`caravo update\` to update.`
     );
   }
 });
@@ -372,7 +372,7 @@ async function main() {
   if (pendingUpdate && args.subcommand !== "update") {
     process.stderr.write(
       `\n[caravo] update available: ${pendingUpdate.current} → ${pendingUpdate.latest}\n` +
-      `  Run \`caravo update\` or \`npm i -g @caravo/cli@latest\` to update.\n`
+      `  Run \`caravo update\` to update.\n`
     );
   }
 }

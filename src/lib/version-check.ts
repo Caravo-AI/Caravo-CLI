@@ -56,10 +56,22 @@ function writeCache(cache: VersionCache): void {
 }
 
 /**
+ * Detect if the current process is running from the npx cache.
+ */
+export function isNpxRun(): boolean {
+  try {
+    const scriptPath = process.argv[1] || "";
+    return scriptPath.includes(join(".npm", "_npx"));
+  } catch {
+    return false;
+  }
+}
+
+/**
  * Clear our package from the npx cache (~/.npm/_npx/).
  * This ensures the next `npx @caravo/cli` invocation downloads the latest version.
  */
-function clearNpxCache(packageName: string): void {
+export function clearNpxCache(packageName: string): void {
   const npxDir = join(homedir(), ".npm", "_npx");
   try {
     if (!existsSync(npxDir)) return;
