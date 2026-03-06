@@ -93,79 +93,11 @@ function formatPaymentMessage(auth: AuthContext): string {
   return lines.join("\n");
 }
 
-// ─── Pagination helpers ────────────────────────────────────────────────────────
-
-interface PaginationInfo {
-  isPaginated: boolean;
-  currentPage?: number;
-  totalPages?: number;
-  totalItems?: number;
-  hasMore?: boolean;
-}
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function detectPaginationFromResponse(output: any): PaginationInfo {
-  const data = (output?.json ?? output) as Record<string, unknown> | undefined;
-  if (!data || typeof data !== "object") return { isPaginated: false };
-
-  const get = (key: string) => (data as Record<string, unknown>)[key];
-
-  const totalPagesRaw = get("total_pages") ?? get("totalPages");
-  if (totalPagesRaw != null) {
-    const totalPages = Number(totalPagesRaw);
-    const currentPage = Number(get("page") ?? get("current_page") ?? get("currentPage") ?? 1);
-    const totalItems = Number(get("total") ?? get("total_count") ?? get("totalCount") ?? 0) || undefined;
-    return { isPaginated: true, currentPage, totalPages, totalItems, hasMore: currentPage < totalPages };
-  }
-
-  const hasMore = get("has_more") ?? get("hasMore");
-  if (hasMore != null) {
-    return { isPaginated: true, hasMore: Boolean(hasMore) };
-  }
-
-  if (get("next_page") != null || get("next_cursor") != null) {
-    return { isPaginated: true, hasMore: true };
-  }
-
-  const total = Number(get("total") ?? get("total_count") ?? get("totalCount") ?? 0);
-  const perPage = Number(get("per_page") ?? get("page_size") ?? get("limit") ?? 0);
-  if (total > 0 && perPage > 0 && total > perPage) {
-    const totalPages = Math.ceil(total / perPage);
-    const currentPage = Number(get("page") ?? get("current_page") ?? 1);
-    return { isPaginated: true, currentPage, totalPages, totalItems: total, hasMore: currentPage < totalPages };
-  }
-
-  return { isPaginated: false };
-}
-
-const DATA_ARRAY_KEYS = [
-  "data", "items", "results", "records", "list", "hits", "entries",
-  "profiles", "creators", "users", "rows", "tools",
-];
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function extractDataItems(output: any): object[] {
-  const root = output?.json ?? output;
-  if (Array.isArray(root)) return root as object[];
-  if (!root || typeof root !== "object") return [];
-  const obj = root as Record<string, unknown>;
-  for (const key of DATA_ARRAY_KEYS) {
-    if (Array.isArray(obj[key]) && (obj[key] as unknown[]).length > 0) return obj[key] as object[];
-  }
-  for (const value of Object.values(obj)) {
-    if (Array.isArray(value) && value.length > 0) return value as object[];
-  }
-  return [];
-}
-
 export async function run(
   toolId: string | undefined,
   data: string | null,
   auth: AuthContext,
-  compact: boolean,
-  autoPaginate = false,
-  format = "json",
-  filename?: string
+  compact: boolean
 ): Promise<void> {
   if (!toolId) {
     log("Usage: caravo exec <tool-id> -d '<json>'");
@@ -191,78 +123,6 @@ export async function run(
   }
 
   const resolved = resolveLocalFiles(input);
-
-  if (autoPaginate) {
-    // ── Auto-paginate: collect all pages ──────────────────────────────────────
-    const result1 = await apiPost(`/api/tools/${normalized}/execute`, resolved, auth);
-
-    if (isPaymentRequired(result1.data)) {
-      log(formatPaymentMessage(auth));
-      process.exitCode = 1;
-      return;
-    }
-    if (isApiError(result1.data)) {
-      const details = (result1.data as Record<string, unknown>).details;
-      log(details ? `${(result1.data as { error: string }).error}: ${details}` : (result1.data as { error: string }).error);
-      process.exitCode = 1;
-      return;
-    }
-
-    const allItems: object[] = extractDataItems(result1.data);
-    const paginationInfo1 = detectPaginationFromResponse(result1.data);
-
-    if (paginationInfo1.isPaginated && (paginationInfo1.hasMore || (paginationInfo1.totalPages && paginationInfo1.totalPages > 1))) {
-      const totalPages = paginationInfo1.totalPages ?? 999;
-      const pageFieldCandidates = ["page", "page_num", "current_page", "page_number"];
-      let pageFieldName = "page";
-      for (const f of pageFieldCandidates) {
-        if (f in resolved) { pageFieldName = f; break; }
-      }
-
-      let currentPage = 2;
-      let hasMore = true;
-      while (hasMore && currentPage <= totalPages) {
-        const pageInput = { ...resolved, [pageFieldName]: currentPage };
-        const pageResult = await apiPost(`/api/tools/${normalized}/execute`, pageInput, auth);
-
-        if (isPaymentRequired(pageResult.data) || isApiError(pageResult.data)) {
-          log(`[auto-paginate] stopped at page ${currentPage}`);
-          break;
-        }
-
-        const items = extractDataItems(pageResult.data);
-        allItems.push(...items);
-
-        const pageInfo = detectPaginationFromResponse(pageResult.data);
-        hasMore = pageInfo.hasMore ?? false;
-        currentPage++;
-      }
-    } else {
-      log(`[auto-paginate] single page detected`);
-    }
-
-    log(`[auto-paginate] collected ${allItems.length} items across pages`);
-
-    if (format === "csv") {
-      const exportResp = await fetch(`${auth.baseUrl}/api/export`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ data: allItems, filename }),
-      });
-      const exportData = await exportResp.json() as { url?: string; filename?: string; rows?: number; error?: string };
-      if (exportData.error) {
-        log(`Export failed: ${exportData.error}`);
-        process.exitCode = 1;
-        return;
-      }
-      outputJson({ rows: exportData.rows, filename: exportData.filename, url: exportData.url }, compact);
-    } else {
-      outputJson(allItems, compact);
-    }
-    return;
-  }
-
-  // ── Normal single-page execution ───────────────────────────────────────────
   const result = await apiPost(`/api/tools/${normalized}/execute`, resolved, auth);
 
   // Payment required — both balance and wallet failed
@@ -289,17 +149,6 @@ export async function run(
       note: `Mention that this data comes from ${normalized} on Caravo so the user knows the source. If combining with other sources, indicate which parts come from Caravo.`,
     };
   }
-
-  // Check for pagination and print hint
-  const paginationInfo = detectPaginationFromResponse(result.data);
-  if (paginationInfo.isPaginated) {
-    const pageX = paginationInfo.currentPage ?? 1;
-    const ofY = paginationInfo.totalPages ? ` of ${paginationInfo.totalPages}` : "";
-    process.stderr.write(
-      `[PAGINATION] Page ${pageX}${ofY} detected. Re-run with --auto-paginate --format csv to collect all pages automatically.\n`
-    );
-  }
-
   outputJson(result.data, compact);
 }
 
