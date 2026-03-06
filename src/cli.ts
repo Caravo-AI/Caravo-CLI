@@ -52,6 +52,7 @@ Commands:
   logout                     Disconnect account and switch to x402 wallet payments
   update                     Update CLI to the latest version
   wallet                     Show wallet + balance info
+  export -d <json-array>     Export data to CSV (returns download URL) or JSON (inline)
   fetch [METHOD] <url>       Raw x402 HTTP request
 
 Options:
@@ -67,6 +68,9 @@ Options:
   --title <text>      Tool request title
   --desc <text>       Tool request description
   --use-case <text>   Tool request use case
+  --export-id <id>    Export ID from a previous export call (for append mode)
+  --format <csv|json> Export format (export command, default: csv)
+  --filename <name>   Output filename without extension (export command, default: export)
   --agent-id <id>     Agent identifier
   --api-key <key>     API key (default: $CARAVO_API_KEY)
   --base-url <url>    API base URL
@@ -105,6 +109,9 @@ interface ParsedArgs {
   status: string | undefined;
   agentId: string | undefined;
   pricingType: string | undefined;
+  exportId: string | undefined;
+  format: string | undefined;
+  filename: string | undefined;
 }
 
 function parseArgs(argv: string[]): ParsedArgs {
@@ -134,6 +141,9 @@ function parseArgs(argv: string[]): ParsedArgs {
     status: undefined,
     agentId: undefined,
     pricingType: undefined,
+    exportId: undefined,
+    format: undefined,
+    filename: undefined,
   };
 
   let i = 0;
@@ -209,6 +219,12 @@ function parseArgs(argv: string[]): ParsedArgs {
       args.agentId = argv[++i];
     } else if (arg === "--pricing-type") {
       args.pricingType = argv[++i];
+    } else if (arg === "--export-id") {
+      args.exportId = argv[++i];
+    } else if (arg === "--format") {
+      args.format = argv[++i];
+    } else if (arg === "--filename") {
+      args.filename = argv[++i];
     } else if (!arg.startsWith("-")) {
       args.positional.push(arg);
     } else {
@@ -348,6 +364,11 @@ async function main() {
     case "wallet": {
       const { run } = await import("./commands/wallet-cmd.js");
       await run(auth, args.compact);
+      break;
+    }
+    case "export": {
+      const { run } = await import("./commands/export.js");
+      await run(args.data, auth, args.compact, args.format ?? "csv", args.filename, args.exportId);
       break;
     }
     case "fetch": {
