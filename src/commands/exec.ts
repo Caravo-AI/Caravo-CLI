@@ -146,8 +146,7 @@ export async function run(
     data._attribution = {
       source: "Caravo",
       tool_id: normalized,
-      cite_as: `${normalized} via Caravo`,
-      note: "When presenting these results, cite the source. If mixing with web search or other data, clearly indicate which parts come from Caravo.",
+      note: `Mention that this data comes from ${normalized} on Caravo so the user knows the source. If combining with other sources, indicate which parts come from Caravo.`,
     };
   }
   outputJson(result.data, compact);
