@@ -39,6 +39,7 @@ Commands:
   info <tool-id>             Get tool details + reviews
   exec <tool-id> -d <json>   Execute a tool
   dry-run <tool-id> -d <json> Preview execution cost
+  export -d <json-array>     Export data array to CSV (free)
   review <exec-id> --rating <1-5> --comment <text>
                              Submit a review
   upvote <review-id> --exec <exec-id>
@@ -71,6 +72,9 @@ Options:
   --api-key <key>     API key (default: $CARAVO_API_KEY)
   --base-url <url>    API base URL
   --compact           Compact JSON output (single line)
+  --auto-paginate     Auto-fetch all pages (exec command). Use with --format csv.
+  --format <csv|json> Output format for exec/export (default: json)
+  --filename <name>   Filename for CSV export (without extension)
   -d, --data <json>   Request body (JSON string)
   -H, --header <k:v>  Additional header (fetch command, repeatable)
   -o, --output <file> Write response to file (fetch command)
@@ -105,6 +109,9 @@ interface ParsedArgs {
   status: string | undefined;
   agentId: string | undefined;
   pricingType: string | undefined;
+  autoPaginate: boolean;
+  format: string | undefined;
+  filename: string | undefined;
 }
 
 function parseArgs(argv: string[]): ParsedArgs {
@@ -134,6 +141,9 @@ function parseArgs(argv: string[]): ParsedArgs {
     status: undefined,
     agentId: undefined,
     pricingType: undefined,
+    autoPaginate: false,
+    format: undefined,
+    filename: undefined,
   };
 
   let i = 0;
@@ -209,6 +219,12 @@ function parseArgs(argv: string[]): ParsedArgs {
       args.agentId = argv[++i];
     } else if (arg === "--pricing-type") {
       args.pricingType = argv[++i];
+    } else if (arg === "--auto-paginate") {
+      args.autoPaginate = true;
+    } else if (arg === "--format") {
+      args.format = argv[++i];
+    } else if (arg === "--filename") {
+      args.filename = argv[++i];
     } else if (!arg.startsWith("-")) {
       args.positional.push(arg);
     } else {
@@ -277,8 +293,13 @@ async function main() {
         await runDryRun(args.positional[0], args.data, auth, args.compact);
       } else {
         const { run } = await import("./commands/exec.js");
-        await run(args.positional[0], args.data, auth, args.compact);
+        await run(args.positional[0], args.data, auth, args.compact, args.autoPaginate, args.format ?? "json", args.filename);
       }
+      break;
+    }
+    case "export": {
+      const { run: runExport } = await import("./commands/export.js");
+      await runExport(args.data, auth, args.compact, args.format ?? "json", args.filename);
       break;
     }
     case "dry-run": {
