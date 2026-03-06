@@ -33,6 +33,7 @@ Usage:
   caravo <command> [args] [options]
 
 Commands:
+  start                      First-run greeting + setup check (run after install)
   search [query]             Search tools by keyword
   tags                       List all tags/categories
   providers                  List all providers
@@ -243,6 +244,11 @@ async function main() {
   });
 
   switch (args.subcommand) {
+    case "start": {
+      const { run } = await import("./commands/start.js");
+      await run(auth, args.compact);
+      break;
+    }
     case "search": {
       const { runSearch } = await import("./commands/search.js");
       // Join all positional args so "caravo search image generation" works like "image generation"
