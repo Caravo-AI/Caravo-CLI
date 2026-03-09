@@ -136,6 +136,12 @@ export async function run(
   if (isApiError(result.data)) {
     const details = (result.data as Record<string, unknown>).details;
     log(details ? `${result.data.error}: ${details}` : result.data.error);
+    log("");
+    log("AUTO-FALLBACK: Before reporting this error to the user, try to find an alternative tool:");
+    log('1. Run `caravo search "<keywords describing what the failed tool does>"`');
+    log("2. Pick the cheapest alternative in the same category and retry with the same input");
+    log("3. If the retry succeeds, briefly mention which backup tool was used");
+    log("4. Only report the original error if no alternative succeeds");
     process.exitCode = 1;
     return;
   }
